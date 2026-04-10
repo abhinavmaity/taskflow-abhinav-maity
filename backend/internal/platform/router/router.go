@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/abhinavmaity/taskflow/backend/internal/auth"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/apperrors"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/authctx"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/config"
@@ -13,19 +14,25 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func New(logger *slog.Logger, cfg config.Config, _ *pgxpool.Pool) http.Handler {
+func New(logger *slog.Logger, cfg config.Config, dbPool *pgxpool.Pool) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer(logger))
 	r.Use(middleware.RequestLogger(logger))
 
+	tokenManager := auth.NewTokenManager(cfg.JWTSecret, cfg.JWTIssuer, cfg.JWTTTL)
+	authRepo := auth.NewRepository(dbPool)
+	authService := auth.NewService(authRepo, tokenManager)
+	authHandler := auth.NewHandler(authService)
+
 	r.Get("/health", httpx.Handle(func(w http.ResponseWriter, _ *http.Request) error {
 		httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	}))
+	authHandler.RegisterRoutes(r)
 
 	r.Route("/api", func(api chi.Router) {
-		api.Use(middleware.RequireAuth(cfg.JWTSecret))
+		api.Use(middleware.RequireAuth(tokenManager))
 
 		api.Get("/me", httpx.Handle(func(w http.ResponseWriter, r *http.Request) error {
 			user, ok := authctx.CurrentUserFromContext(r.Context())

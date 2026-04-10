@@ -5,19 +5,13 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/abhinavmaity/taskflow/backend/internal/auth"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/apperrors"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/authctx"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/httpx"
-	"github.com/golang-jwt/jwt/v5"
 )
 
-type Claims struct {
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
-	jwt.RegisteredClaims
-}
-
-func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
+func RequireAuth(tokenManager *auth.TokenManager) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString, err := bearerToken(r.Header.Get("Authorization"))
@@ -26,14 +20,8 @@ func RequireAuth(jwtSecret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			claims := &Claims{}
-			token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
-				if token.Method != jwt.SigningMethodHS256 {
-					return nil, errors.New("unexpected signing method")
-				}
-				return []byte(jwtSecret), nil
-			})
-			if err != nil || !token.Valid || claims.UserID == "" || claims.Email == "" {
+			claims, err := tokenManager.Parse(tokenString)
+			if err != nil {
 				httpx.WriteError(w, apperrors.NewUnauthorized())
 				return
 			}
