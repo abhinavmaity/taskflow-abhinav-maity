@@ -7,3 +7,4 @@ frontend/vite.config.js
 frontend/vite.config.d.ts
 backend/bin/
 *.log
+.idea
