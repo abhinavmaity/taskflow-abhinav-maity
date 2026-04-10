@@ -226,21 +226,14 @@ func (r *Repository) ListProjectTasks(ctx context.Context, projectID string) ([]
 	return tasks, nil
 }
 
-func (r *Repository) ListAvailableAssignees(ctx context.Context, projectID string) ([]Assignee, error) {
+func (r *Repository) ListAvailableAssignees(ctx context.Context, _ string) ([]Assignee, error) {
 	const query = `
-		SELECT DISTINCT u.id::text, u.name, u.email
+		SELECT u.id::text, u.name, u.email
 		FROM users u
-		WHERE u.id IN (
-			SELECT owner_id FROM projects WHERE id = $1
-			UNION
-			SELECT assignee_id FROM tasks WHERE project_id = $1 AND assignee_id IS NOT NULL
-			UNION
-			SELECT created_by FROM tasks WHERE project_id = $1
-		)
 		ORDER BY u.name ASC
 	`
 
-	rows, err := r.db.Query(ctx, query, projectID)
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("list available assignees: %w", err)
 	}
