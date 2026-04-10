@@ -1,28 +1,36 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
+import { AppShell } from "./layout/AppShell";
+import { LoginPage } from "./pages/LoginPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { ProtectedRoute } from "./routes/ProtectedRoute";
+import { PublicOnlyRoute } from "./routes/PublicOnlyRoute";
 
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <main style={{ padding: "1.5rem", fontFamily: "system-ui, sans-serif" }}>
-      <h1>{title}</h1>
-      <p>Milestone 0 scaffold route.</p>
-      <nav style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
-        <Link to="/login">Login</Link>
-        <Link to="/register">Register</Link>
-        <Link to="/projects">Projects</Link>
-      </nav>
-    </main>
-  );
+function RootRedirect() {
+  const { isAuthenticated } = useAuth();
+  return <Navigate replace to={isAuthenticated ? "/projects" : "/login"} />;
 }
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<PlaceholderPage title="TaskFlow" />} />
-      <Route path="/login" element={<PlaceholderPage title="Login" />} />
-      <Route path="/register" element={<PlaceholderPage title="Register" />} />
-      <Route path="/projects" element={<PlaceholderPage title="Projects" />} />
-      <Route path="/projects/:id" element={<PlaceholderPage title="Project Detail" />} />
+      <Route element={<RootRedirect />} path="/" />
+
+      <Route element={<PublicOnlyRoute />}>
+        <Route element={<LoginPage />} path="/login" />
+        <Route element={<RegisterPage />} path="/register" />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppShell />}>
+          <Route element={<ProjectsPage />} path="/projects" />
+          <Route element={<ProjectDetailPage />} path="/projects/:id" />
+        </Route>
+      </Route>
+
+      <Route element={<Navigate replace to="/" />} path="*" />
     </Routes>
   );
 }
-
