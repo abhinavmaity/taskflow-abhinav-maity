@@ -18,6 +18,7 @@ import (
 
 func New(logger *slog.Logger, cfg config.Config, dbPool *pgxpool.Pool) http.Handler {
 	r := chi.NewRouter()
+	r.Use(middleware.CORS(cfg.CORSOrigin))
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Recoverer(logger))
 	r.Use(middleware.RequestLogger(logger))
