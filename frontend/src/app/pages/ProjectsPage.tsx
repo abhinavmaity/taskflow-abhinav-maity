@@ -89,7 +89,8 @@ export function ProjectsPage() {
     <Stack spacing={3}>
       <Stack direction={{ sm: "row", xs: "column" }} justifyContent="space-between" spacing={2}>
         <div>
-          <Typography sx={{ fontWeight: 700 }} variant="h4">
+          <Typography className="tf-hero-label">Workspace</Typography>
+          <Typography sx={{ fontWeight: 700, marginTop: 1 }} variant="h3">
             Projects
           </Typography>
           <Typography color="text.secondary">
@@ -130,14 +131,14 @@ export function ProjectsPage() {
       ) : null}
 
       {projects.map((project) => (
-        <Card key={project.id}>
+        <Card key={project.id} sx={{ backgroundColor: "#ffffff" }}>
           <CardContent>
             <Stack spacing={1.5}>
               <Stack direction="row" justifyContent="space-between" spacing={2}>
                 <Typography sx={{ fontWeight: 600 }} variant="h6">
                   {project.name}
                 </Typography>
-                <Chip color="primary" label="Project" size="small" />
+                <Chip color="secondary" label="Project" size="small" />
               </Stack>
               <Typography color="text.secondary">
                 {project.description?.trim() || "No description provided."}
