@@ -4,7 +4,10 @@ import type {
   ProjectDetailResponse,
   ProjectListResponse,
   StatsResponse,
-  TaskListResponse
+  TaskListResponse,
+  TaskPriority,
+  TaskStatus,
+  TaskSummary
 } from "./types";
 
 type AuthInput = {
@@ -31,6 +34,24 @@ type ListTasksInput = {
   limit: number;
   status?: string;
   assignee?: string;
+};
+
+export type UpsertTaskInput = {
+  title: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assignee_id?: string;
+  due_date?: string;
+};
+
+export type UpdateTaskInput = {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  assignee_id?: string;
+  due_date?: string;
 };
 
 export function login(payload: AuthInput) {
@@ -87,4 +108,20 @@ export function listProjectTasks(token: string, projectId: string, input: ListTa
   }
 
   return apiRequest<TaskListResponse>(`/projects/${projectId}/tasks?${query.toString()}`, { token });
+}
+
+export function createTask(token: string, projectId: string, payload: UpsertTaskInput) {
+  return apiRequest<TaskSummary>(`/projects/${projectId}/tasks`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+}
+
+export function updateTask(token: string, taskId: string, payload: UpdateTaskInput) {
+  return apiRequest<TaskSummary>(`/tasks/${taskId}`, {
+    method: "PATCH",
+    token,
+    body: payload
+  });
 }

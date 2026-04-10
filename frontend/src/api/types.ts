@@ -1,3 +1,6 @@
+export type TaskStatus = "todo" | "in_progress" | "done";
+export type TaskPriority = "low" | "medium" | "high";
+
 export type ApiValidationFields = Record<string, string>;
 
 export type ApiErrorResponse = {
@@ -34,8 +37,8 @@ export type TaskSummary = {
   id: string;
   title: string;
   description?: string;
-  status: "todo" | "in_progress" | "done";
-  priority: "low" | "medium" | "high";
+  status: TaskStatus;
+  priority: TaskPriority;
   project_id: string;
   assignee_id?: string;
   created_by: string;
