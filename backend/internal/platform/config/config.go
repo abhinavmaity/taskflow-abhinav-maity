@@ -15,15 +15,17 @@ type Config struct {
 	JWTSecret   string
 	JWTIssuer   string
 	JWTTTL      time.Duration
+	CORSOrigin  string
 	LogLevel    slog.Level
 }
 
 func Load() (Config, error) {
 	cfg := Config{
-		ServerPort:  getOrDefault("PORT", "8080"),
+		ServerPort:  getOrDefault("API_PORT", getOrDefault("PORT", "8080")),
 		DatabaseURL: os.Getenv("DATABASE_URL"),
 		JWTSecret:   os.Getenv("JWT_SECRET"),
 		JWTIssuer:   getOrDefault("JWT_ISSUER", "taskflow"),
+		CORSOrigin:  strings.TrimSpace(os.Getenv("CORS_ORIGIN")),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -61,7 +63,7 @@ func getOrDefault(key, fallback string) string {
 func validatePort(port string) error {
 	n, err := strconv.Atoi(port)
 	if err != nil || n <= 0 || n > 65535 {
-		return fmt.Errorf("PORT must be a valid TCP port")
+		return fmt.Errorf("API_PORT/PORT must be a valid TCP port")
 	}
 	return nil
 }

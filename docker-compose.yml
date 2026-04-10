@@ -10,22 +10,54 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "${POSTGRES_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - taskflow-db-data:/var/lib/postgresql/data
 
   backend:
-    image: alpine:3.20
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: taskflow-backend
-    command: ["sh", "-c", "echo backend container placeholder for Milestone 0"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      API_PORT: ${API_PORT}
+      PORT: ${API_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      SEED_ENABLED: ${SEED_ENABLED}
+      JWT_ISSUER: ${JWT_ISSUER}
+      JWT_TTL_HOURS: ${JWT_TTL_HOURS}
+      LOG_LEVEL: ${LOG_LEVEL}
+      MIGRATIONS_DIR: /app/migrations
+      SEED_DIR: /app/seed-data
     ports:
-      - "${API_PORT}:8080"
+      - "${API_PORT}:${API_PORT}"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:${API_PORT}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   frontend:
-    image: alpine:3.20
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
     container_name: taskflow-frontend
-    command: ["sh", "-c", "echo frontend container placeholder for Milestone 0"]
     ports:
       - "${FRONTEND_PORT}:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
+volumes:
+  taskflow-db-data:
