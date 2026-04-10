@@ -1,11 +1,8 @@
 package auth
 
 import (
-	"encoding/json"
-	"io"
 	"net/http"
 
-	"github.com/abhinavmaity/taskflow/backend/internal/platform/apperrors"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/httpx"
 	"github.com/go-chi/chi/v5"
 )
@@ -25,7 +22,7 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 
 func (h *Handler) register(w http.ResponseWriter, r *http.Request) error {
 	var req RegisterRequest
-	if err := decodeJSON(r, &req); err != nil {
+	if err := httpx.DecodeJSON(r, &req); err != nil {
 		return err
 	}
 
@@ -40,7 +37,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) error {
 
 func (h *Handler) login(w http.ResponseWriter, r *http.Request) error {
 	var req LoginRequest
-	if err := decodeJSON(r, &req); err != nil {
+	if err := httpx.DecodeJSON(r, &req); err != nil {
 		return err
 	}
 
@@ -50,28 +47,5 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	httpx.WriteJSON(w, http.StatusOK, resp)
-	return nil
-}
-
-func decodeJSON(r *http.Request, out any) error {
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(out); err != nil {
-		return apperrors.NewValidation(map[string]string{
-			"body": "must be valid JSON",
-		})
-	}
-
-	if err := decoder.Decode(&struct{}{}); err != io.EOF {
-		if err == nil {
-			return apperrors.NewValidation(map[string]string{
-				"body": "must contain a single JSON object",
-			})
-		}
-		return apperrors.NewValidation(map[string]string{
-			"body": "must be valid JSON",
-		})
-	}
-
 	return nil
 }

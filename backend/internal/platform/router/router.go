@@ -10,6 +10,8 @@ import (
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/config"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/httpx"
 	"github.com/abhinavmaity/taskflow/backend/internal/platform/middleware"
+	"github.com/abhinavmaity/taskflow/backend/internal/projects"
+	"github.com/abhinavmaity/taskflow/backend/internal/tasks"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -24,6 +26,12 @@ func New(logger *slog.Logger, cfg config.Config, dbPool *pgxpool.Pool) http.Hand
 	authRepo := auth.NewRepository(dbPool)
 	authService := auth.NewService(authRepo, tokenManager)
 	authHandler := auth.NewHandler(authService)
+	projectsRepo := projects.NewRepository(dbPool)
+	projectsService := projects.NewService(projectsRepo)
+	projectsHandler := projects.NewHandler(projectsService)
+	tasksRepo := tasks.NewRepository(dbPool)
+	tasksService := tasks.NewService(tasksRepo)
+	tasksHandler := tasks.NewHandler(tasksService)
 
 	r.Get("/health", httpx.Handle(func(w http.ResponseWriter, _ *http.Request) error {
 		httpx.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -31,10 +39,10 @@ func New(logger *slog.Logger, cfg config.Config, dbPool *pgxpool.Pool) http.Hand
 	}))
 	authHandler.RegisterRoutes(r)
 
-	r.Route("/api", func(api chi.Router) {
-		api.Use(middleware.RequireAuth(tokenManager))
+	r.Group(func(protected chi.Router) {
+		protected.Use(middleware.RequireAuth(tokenManager))
 
-		api.Get("/me", httpx.Handle(func(w http.ResponseWriter, r *http.Request) error {
+		protected.Get("/me", httpx.Handle(func(w http.ResponseWriter, r *http.Request) error {
 			user, ok := authctx.CurrentUserFromContext(r.Context())
 			if !ok {
 				return apperrors.NewUnauthorized()
@@ -43,10 +51,8 @@ func New(logger *slog.Logger, cfg config.Config, dbPool *pgxpool.Pool) http.Hand
 			return nil
 		}))
 
-		// Temporary endpoint for verifying 403 mapping before domain modules exist.
-		api.Get("/forbidden-check", httpx.Handle(func(_ http.ResponseWriter, _ *http.Request) error {
-			return apperrors.NewForbidden()
-		}))
+		projectsHandler.RegisterRoutes(protected)
+		tasksHandler.RegisterRoutes(protected)
 	})
 
 	r.NotFound(httpx.Handle(func(_ http.ResponseWriter, _ *http.Request) error {
