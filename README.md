@@ -45,7 +45,7 @@ Prerequisites:
 Run:
 
 ```bash
-git clone https://github.com/abhinavmaity/taskflow.git
+git clone https://github.com/abhinavmaity/taskflow-abhinav-maity.git
 cd taskflow
 cp .env.example .env
 docker compose up --build
