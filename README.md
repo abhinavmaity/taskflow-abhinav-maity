@@ -146,8 +146,6 @@ Error model:
 ## 7. What I'd Do With More Time
 
 - Add backend unit tests for service/repository edge cases in addition to integration tests.
-- Add full CORS policy configuration for multi-origin/dev-preview environments.
-- Add delete-task UX and richer task editing ergonomics in frontend.
-- Reduce frontend bundle size (code splitting + route-level lazy loading).
-- Add observability polish (request timing metrics, structured trace correlation, error dashboards).
+- Add delete-task UX and richer task editing aesthetics in frontend.
+- Add observability (request timing metrics, error dashboards).
 - Strengthen CI with Docker smoke tests and lint/format checks.

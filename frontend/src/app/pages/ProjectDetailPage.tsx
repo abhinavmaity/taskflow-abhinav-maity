@@ -218,6 +218,11 @@ export function ProjectDetailPage() {
   const assignees = useMemo(() => detailQuery.data?.available_assignees ?? [], [detailQuery.data]);
   const taskItems = tasksQuery.data?.tasks ?? [];
   const totalPages = tasksQuery.data?.pagination.total_pages ?? 0;
+  const statsColors: Record<string, string> = {
+    done: "#1d4ed8",
+    in_progress: "#f4c430",
+    todo: "#e63946"
+  };
 
   if (!id) {
     return <Alert severity="error">Invalid project id.</Alert>;
@@ -271,7 +276,8 @@ export function ProjectDetailPage() {
   return (
     <Stack spacing={3}>
       <div>
-        <Typography sx={{ fontWeight: 700 }} variant="h4">
+        <Typography className="tf-hero-label">Project</Typography>
+        <Typography sx={{ fontWeight: 700, marginTop: 1 }} variant="h3">
           {project.name}
         </Typography>
         <Typography color="text.secondary">{project.description?.trim() || "No description provided."}</Typography>
@@ -342,7 +348,7 @@ export function ProjectDetailPage() {
                           <Stack direction="row" spacing={1}>
                             <Chip color="default" label={task.priority} size="small" />
                             <Chip
-                              color={task.status === "done" ? "success" : task.status === "in_progress" ? "warning" : "default"}
+                              color={task.status === "done" ? "secondary" : task.status === "in_progress" ? "warning" : "primary"}
                               label={task.status}
                               size="small"
                             />
@@ -415,11 +421,33 @@ export function ProjectDetailPage() {
                 {statsQuery.isError ? <Alert severity="error">{toErrorMessage(statsQuery.error)}</Alert> : null}
 
                 {statsQuery.data?.by_status.map((entry) => (
-                  <Stack direction="row" justifyContent="space-between" key={entry.status}>
-                    <Typography color="text.secondary" sx={{ textTransform: "capitalize" }} variant="body2">
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    key={entry.status}
+                    sx={{
+                      backgroundColor: statsColors[entry.status] ?? "#eeeeee",
+                      border: "2px solid #000000",
+                      paddingX: 1.2,
+                      paddingY: 0.9
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: entry.status === "in_progress" ? "#000000" : "#ffffff",
+                        textTransform: "capitalize"
+                      }}
+                      variant="body2"
+                    >
                       {entry.status.replace("_", " ")}
                     </Typography>
-                    <Typography sx={{ fontWeight: 600 }} variant="body2">
+                    <Typography
+                      sx={{
+                        color: entry.status === "in_progress" ? "#000000" : "#ffffff",
+                        fontWeight: 700
+                      }}
+                      variant="body2"
+                    >
                       {entry.count}
                     </Typography>
                   </Stack>

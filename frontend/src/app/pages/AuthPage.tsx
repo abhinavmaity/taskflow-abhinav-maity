@@ -126,13 +126,38 @@ export function AuthPage({ mode }: AuthPageProps) {
     <Box
       sx={{
         alignItems: "center",
-        background: "linear-gradient(160deg, #f5f7ff 0%, #f3f7f2 100%)",
+        backgroundColor: "#ffffff",
         display: "grid",
         minHeight: "100dvh",
-        padding: 2
+        padding: 2,
+        position: "relative"
       }}
     >
-      <Card sx={{ marginX: "auto", maxWidth: 460, width: "100%" }}>
+      <Box
+        aria-hidden
+        sx={{
+          backgroundColor: "#1d4ed8",
+          border: "4px solid #000000",
+          height: 72,
+          left: { sm: "12%", xs: "5%" },
+          position: "absolute",
+          top: { sm: "16%", xs: "9%" },
+          width: 72
+        }}
+      />
+      <Box
+        aria-hidden
+        sx={{
+          backgroundColor: "#f4c430",
+          border: "4px solid #000000",
+          bottom: { sm: "14%", xs: "10%" },
+          height: 58,
+          position: "absolute",
+          right: { sm: "16%", xs: "6%" },
+          width: 58
+        }}
+      />
+      <Card sx={{ marginX: "auto", maxWidth: 460, width: "100%", zIndex: 1 }}>
         <CardContent sx={{ padding: { sm: 5, xs: 3 } }}>
           <Stack spacing={3}>
             <Box>
@@ -189,7 +214,7 @@ export function AuthPage({ mode }: AuthPageProps) {
               {content.altText}{" "}
               <Typography
                 component={RouterLink}
-                sx={{ color: "primary.main", fontWeight: 600, textDecoration: "none" }}
+                sx={{ color: "secondary.main", fontWeight: 700, textDecoration: "none", textTransform: "uppercase" }}
                 to={content.altLink}
                 variant="inherit"
               >
