@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taskflow-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+  backend:
+    image: alpine:3.20
+    container_name: taskflow-backend
+    command: ["sh", "-c", "echo backend container placeholder for Milestone 0"]
+    ports:
+      - "${API_PORT}:8080"
+    depends_on:
+      - db
+
+  frontend:
+    image: alpine:3.20
+    container_name: taskflow-frontend
+    command: ["sh", "-c", "echo frontend container placeholder for Milestone 0"]
+    ports:
+      - "${FRONTEND_PORT}:3000"
+    depends_on:
+      - backend
+
