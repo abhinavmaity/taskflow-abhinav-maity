@@ -10,6 +10,8 @@ import {
 } from "@mui/material";
 import { FormEvent, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
+import { ApiError, toErrorMessage } from "../../api/client";
+import { login, register } from "../../api/taskflowApi";
 import { useAuth } from "../../auth/AuthProvider";
 
 type AuthPageMode = "login" | "register";
@@ -27,13 +29,15 @@ export function AuthPage({ mode }: AuthPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const content = useMemo(
     () =>
       mode === "login"
         ? {
             title: "Welcome Back",
-            subtitle: "Use local session auth for now. API auth wiring is next.",
+            subtitle: "Sign in with your TaskFlow account.",
             action: "Sign In",
             altText: "Need an account?",
             altLink: "/register",
@@ -41,7 +45,7 @@ export function AuthPage({ mode }: AuthPageProps) {
           }
         : {
             title: "Create Account",
-            subtitle: "This foundation stores auth locally until API integration is added.",
+            subtitle: "Register a new TaskFlow account.",
             action: "Create Account",
             altText: "Already have an account?",
             altLink: "/login",
@@ -50,11 +54,17 @@ export function AuthPage({ mode }: AuthPageProps) {
     [mode]
   );
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (submitting) {
+      return;
+    }
+
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedName = name.trim();
     const trimmedPassword = password.trim();
+    setFormError("");
+    setFieldErrors({});
 
     if (!trimmedEmail || !trimmedPassword || (mode === "register" && !trimmedName)) {
       setFormError("Please complete all required fields.");
@@ -71,23 +81,45 @@ export function AuthPage({ mode }: AuthPageProps) {
       return;
     }
 
-    signIn({
-      token: `local-session-${Date.now()}`,
-      user: {
-        name: trimmedName || trimmedEmail.split("@")[0],
-        email: trimmedEmail
+    setSubmitting(true);
+    try {
+      const authResponse =
+        mode === "login"
+          ? await login({
+              email: trimmedEmail,
+              password: trimmedPassword
+            })
+          : await register({
+              name: trimmedName,
+              email: trimmedEmail,
+              password: trimmedPassword
+            });
+
+      signIn({
+        token: authResponse.token,
+        user: {
+          name: authResponse.user.name,
+          email: authResponse.user.email
+        }
+      });
+
+      const redirectTo =
+        typeof location.state === "object" &&
+        location.state &&
+        "from" in location.state &&
+        typeof location.state.from === "string"
+          ? location.state.from
+          : "/projects";
+
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      if (error instanceof ApiError && error.fields) {
+        setFieldErrors(error.fields);
       }
-    });
-
-    const redirectTo =
-      typeof location.state === "object" &&
-      location.state &&
-      "from" in location.state &&
-      typeof location.state.from === "string"
-        ? location.state.from
-        : "/projects";
-
-    navigate(redirectTo, { replace: true });
+      setFormError(toErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -112,10 +144,6 @@ export function AuthPage({ mode }: AuthPageProps) {
               </Typography>
             </Box>
 
-            <Alert severity="info">
-              Milestone 6 foundation mode: route guards and local auth persistence are enabled.
-            </Alert>
-
             {formError ? <Alert severity="error">{formError}</Alert> : null}
 
             <Box component="form" onSubmit={onSubmit}>
@@ -123,6 +151,8 @@ export function AuthPage({ mode }: AuthPageProps) {
                 {mode === "register" ? (
                   <TextField
                     autoComplete="name"
+                    error={Boolean(fieldErrors.name)}
+                    helperText={fieldErrors.name}
                     label="Name"
                     onChange={(event) => setName(event.target.value)}
                     required
@@ -131,6 +161,8 @@ export function AuthPage({ mode }: AuthPageProps) {
                 ) : null}
                 <TextField
                   autoComplete="email"
+                  error={Boolean(fieldErrors.email)}
+                  helperText={fieldErrors.email}
                   label="Email"
                   onChange={(event) => setEmail(event.target.value)}
                   required
@@ -139,13 +171,15 @@ export function AuthPage({ mode }: AuthPageProps) {
                 />
                 <TextField
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  error={Boolean(fieldErrors.password)}
+                  helperText={fieldErrors.password}
                   label="Password"
                   onChange={(event) => setPassword(event.target.value)}
                   required
                   type="password"
                   value={password}
                 />
-                <Button size="large" type="submit" variant="contained">
+                <Button disabled={submitting} size="large" type="submit" variant="contained">
                   {content.action}
                 </Button>
               </Stack>
